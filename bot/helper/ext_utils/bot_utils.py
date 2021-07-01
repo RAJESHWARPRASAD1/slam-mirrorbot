@@ -18,7 +18,6 @@ class MirrorStatus:
     STATUS_DOWNLOADING = "Downloading...📥"
     STATUS_WAITING = "Queued...📝"
     STATUS_FAILED = "Failed 🚫. Cleaning Download..."
-    STATUS_CANCELLED = "Cancelled ❌. Cleaning Download..."
     STATUS_ARCHIVING = "Archiving...🔐"
     STATUS_EXTRACTING = "Extracting...📂"
 
@@ -70,6 +69,13 @@ def getDownloadByGid(gid):
                     return dl
     return None
 
+def getAllDownload():
+    with download_dict_lock:
+        for dlDetails in list(download_dict.values()):
+            if dlDetails.status() == MirrorStatus.STATUS_DOWNLOADING \
+                    or dlDetails.status() == MirrorStatus.STATUS_WAITING:
+                if dlDetails:
+                    return dlDetails
 
 def get_progress_bar_string(status):
     completed = status.processed_bytes() / 8
@@ -101,7 +107,7 @@ def get_readable_message():
                     msg += f"\n<b>Downloaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                 else:
                     msg += f"\n<b>Uploaded:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
-                msg += f"\n<b>Speed:</b> {download.speed()} | <b>ETA:</b> {download.eta()} "
+                msg += f"\n<b>Speed:</b> {download.speed()}\n<b>ETA:</b> {download.eta()} "
                 # if hasattr(download, 'is_torrent'):
                 try:
                     msg += f"\n<b>Seeders:</b> {download.aria_download().num_seeders}" \
@@ -139,6 +145,8 @@ def is_url(url: str):
         return True
     return False
 
+def is_gdrive_link(url: str):
+    return "drive.google.com" in url
 
 def is_mega_link(url: str):
     return "mega.nz" in url
